@@ -1,0 +1,6 @@
+bin/
+.env
+*.log
+.DS_Store
+node_modules/
+clients/js/dist/

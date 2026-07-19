@@ -1,0 +1,33 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - unconvert
+    - unparam
+    - misspell
+    - gocritic
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+  exclusions:
+    rules:
+      # Table-driven fakes in tests intentionally shadow context.Context
+      # parameter names without using them; that's expected for interface
+      # satisfaction, not a real bug.
+      - path: _test\.go
+        linters:
+          - unparam
+      # html/template requires string-built HTML fragments; gocritic's
+      # style rules on that pattern are noise here.
+      - path: internal/web/
+        linters:
+          - gocritic
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
