@@ -15,3 +15,5 @@ All notable changes to snagbox are documented here.
 * Project skeleton — config, Postgres store with embedded goose migration, health endpoint, Docker/compose (Postgres + MinIO), CI, and the single pre-commit gate.
 ### Changed
 * A failed Telegram bot startup (bad or unreachable token) no longer crashes the service — the API and admin UI keep running and the bot is disabled with an error log.
+### Fixed
+* CI lint step now uses golangci-lint-action v8, required for the golangci-lint v2 config (v6 rejected it and blocked the release build).
