@@ -3,6 +3,7 @@ module github.com/supercakecrumb/snagbox
 go 1.26
 
 require (
+	github.com/go-telegram/bot v1.22.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/minio/minio-go/v7 v7.2.1

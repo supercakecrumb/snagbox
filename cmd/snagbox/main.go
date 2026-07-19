@@ -16,6 +16,7 @@ import (
 
 	"github.com/supercakecrumb/snagbox/internal/api"
 	"github.com/supercakecrumb/snagbox/internal/blob"
+	"github.com/supercakecrumb/snagbox/internal/bot"
 	"github.com/supercakecrumb/snagbox/internal/config"
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
@@ -75,6 +76,11 @@ func run() error {
 
 	apiHandler := api.New(st, bl, cfg.PublicBaseURL, logger)
 
+	tg, err := bot.New(cfg, st, bl, logger)
+	if err != nil {
+		return fmt.Errorf("init bot: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -93,6 +99,9 @@ func run() error {
 			errCh <- err
 		}
 	}()
+
+	go tg.Start(ctx)
+	slog.Info("telegram bot started")
 
 	slog.Info("snagbox started", "port", cfg.Port)
 
