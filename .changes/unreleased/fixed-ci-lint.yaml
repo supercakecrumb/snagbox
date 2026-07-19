@@ -1,0 +1,2 @@
+kind: Fixed
+body: CI lint step now uses golangci-lint-action v8, required for the golangci-lint v2 config (v6 rejected it and blocked the release build).
