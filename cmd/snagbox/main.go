@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/supercakecrumb/snagbox/internal/api"
+	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/config"
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
@@ -66,11 +68,19 @@ func run() error {
 	}
 	defer st.Close()
 
+	bl, err := blob.New(ctx, cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket, cfg.S3UseSSL)
+	if err != nil {
+		return fmt.Errorf("open blob: %w", err)
+	}
+
+	apiHandler := api.New(st, bl, cfg.PublicBaseURL, logger)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprint(w, "ok")
 	})
+	mux.Handle("/api/v1/", apiHandler.Routes())
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
