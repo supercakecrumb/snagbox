@@ -23,6 +23,7 @@ import (
 	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/bot"
 	"github.com/supercakecrumb/snagbox/internal/config"
+	"github.com/supercakecrumb/snagbox/internal/digest"
 	"github.com/supercakecrumb/snagbox/internal/store"
 	"github.com/supercakecrumb/snagbox/internal/web"
 )
@@ -107,9 +108,12 @@ func run() error {
 
 	apiHandler := api.New(st, bl, cfg.PublicBaseURL, logger)
 
+	// The bot is best-effort: if Telegram is unreachable or the token is bad,
+	// log it and keep serving the API and admin UI rather than crashing.
 	tg, err := bot.New(cfg, st, bl, botLoginSvc, logger)
 	if err != nil {
-		return fmt.Errorf("init bot: %w", err)
+		logger.Error("telegram bot disabled", "error", err)
+		tg = nil
 	}
 
 	cookieSecure := strings.HasPrefix(cfg.PublicBaseURL, "https://")
@@ -144,8 +148,16 @@ func run() error {
 		}
 	}()
 
-	go tg.Start(ctx)
-	slog.Info("telegram bot started")
+	if tg != nil {
+		go tg.Start(ctx)
+		slog.Info("telegram bot started")
+
+		if cfg.DigestHour != nil {
+			dg := digest.New(tg, st, cfg.AdminTelegramIDs, *cfg.DigestHour, logger)
+			go dg.Run(ctx)
+			slog.Info("daily inbox digest scheduled", "hour", *cfg.DigestHour)
+		}
+	}
 
 	slog.Info("snagbox started", "port", cfg.Port)
 

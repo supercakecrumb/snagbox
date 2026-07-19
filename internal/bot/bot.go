@@ -97,6 +97,14 @@ func (b *Bot) Start(ctx context.Context) {
 // Client returns the underlying Telegram client.
 func (b *Bot) Client() *tgbot.Bot { return b.client }
 
+// SendText sends a plain-text message to a chat, used by the daily digest.
+func (b *Bot) SendText(ctx context.Context, chatID int64, text string) error {
+	if _, err := b.client.SendMessage(ctx, &tgbot.SendMessageParams{ChatID: chatID, Text: text}); err != nil {
+		return fmt.Errorf("send text: %w", err)
+	}
+	return nil
+}
+
 // resolveUser maps a Telegram user to a stored user, seeding admins on first
 // contact. The bool is false when the user is not allowed to file issues.
 func (b *Bot) resolveUser(ctx context.Context, from *models.User) (store.User, bool) {

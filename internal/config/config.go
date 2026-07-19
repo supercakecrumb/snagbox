@@ -25,6 +25,9 @@ type Config struct {
 	Port             string
 	LogLevel         slog.Level
 	SessionEncKey    []byte
+	// DigestHour is the local-time hour (0–23) at which the daily inbox
+	// digest is sent to admins. Nil disables the digest.
+	DigestHour *int
 }
 
 // Load reads the configuration from environment variables and returns a
@@ -107,6 +110,18 @@ func Load() (Config, error) {
 			errs = append(errs, fmt.Errorf("SESSION_ENC_KEY: must decode to 32 bytes, got %d", len(key)))
 		default:
 			cfg.SessionEncKey = key
+		}
+	}
+
+	if v := os.Getenv("DIGEST_HOUR"); v != "" {
+		hour, err := strconv.Atoi(v)
+		switch {
+		case err != nil:
+			errs = append(errs, fmt.Errorf("DIGEST_HOUR: invalid int %q", v))
+		case hour < 0 || hour > 23:
+			errs = append(errs, fmt.Errorf("DIGEST_HOUR: must be 0-23, got %d", hour))
+		default:
+			cfg.DigestHour = &hour
 		}
 	}
 
