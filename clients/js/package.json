@@ -1,0 +1,34 @@
+{
+  "name": "@supercakecrumb/snagbox",
+  "version": "0.1.0",
+  "description": "Report issues to a snagbox server.",
+  "license": "MIT",
+  "author": "Aurora Kiel",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "node --import tsx --test src/index.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2"
+  }
+}
