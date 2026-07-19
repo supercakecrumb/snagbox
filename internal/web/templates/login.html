@@ -1,0 +1,15 @@
+{{define "content"}}
+<h1>snagbox admin</h1>
+{{if .Disabled}}
+<div class="card">
+  <p>Admin dashboard login is not configured on this server.</p>
+  <p class="muted">Set <code>SESSION_ENC_KEY</code> to enable the bot-first login flow.</p>
+</div>
+{{else}}
+{{if .Error}}<div class="token-box">{{.Error}}</div>{{end}}
+<div class="card">
+  <p>To sign in, open the Telegram bot and send <code>/login</code>.</p>
+  <p class="muted">Only allowlisted admins receive a login link. The link opens this page and signs you in automatically.</p>
+</div>
+{{end}}
+{{end}}

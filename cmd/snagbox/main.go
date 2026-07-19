@@ -11,14 +11,20 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/stdlib"
+	authkit "github.com/supercakecrumb/msgr-authkit"
+
 	"github.com/supercakecrumb/snagbox/internal/api"
+	"github.com/supercakecrumb/snagbox/internal/auth"
 	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/bot"
 	"github.com/supercakecrumb/snagbox/internal/config"
 	"github.com/supercakecrumb/snagbox/internal/store"
+	"github.com/supercakecrumb/snagbox/internal/web"
 )
 
 func main() {
@@ -74,12 +80,48 @@ func run() error {
 		return fmt.Errorf("open blob: %w", err)
 	}
 
+	// A database/sql handle over the same pool backs the authkit adapters.
+	sqlDB := stdlib.OpenDBFromPool(st.Pool)
+	defer func() { _ = sqlDB.Close() }()
+
+	intentStore := auth.NewPGIntentStore(sqlDB)
+	linkStore := auth.NewPGLinkStore(sqlDB)
+	sessionIssuer := auth.NewPGSessionIssuer(sqlDB, 7*24*time.Hour)
+
+	// Login is only available when a 32-byte session key is configured.
+	var (
+		botLoginSvc bot.LoginLinkService
+		webRedeemer web.LoginRedeemer
+	)
+	if len(cfg.SessionEncKey) == 32 {
+		authService, err := authkit.NewAuthService(intentStore, linkStore, sessionIssuer,
+			authkit.WithSignedQueryLoginLinks(cfg.PublicBaseURL+"/login", cfg.SessionEncKey, "auth_token"))
+		if err != nil {
+			return fmt.Errorf("init auth service: %w", err)
+		}
+		botLoginSvc = authService
+		webRedeemer = authService
+	} else {
+		logger.Warn("SESSION_ENC_KEY not set — admin dashboard login disabled")
+	}
+
 	apiHandler := api.New(st, bl, cfg.PublicBaseURL, logger)
 
-	tg, err := bot.New(cfg, st, bl, logger)
+	tg, err := bot.New(cfg, st, bl, botLoginSvc, logger)
 	if err != nil {
 		return fmt.Errorf("init bot: %w", err)
 	}
+
+	cookieSecure := strings.HasPrefix(cfg.PublicBaseURL, "https://")
+	webServer := web.NewServer(web.Deps{
+		Store:        st,
+		Blob:         bl,
+		AuthService:  webRedeemer,
+		Sessions:     sessionIssuer,
+		ServerSecret: cfg.SessionEncKey,
+		CookieSecure: cookieSecure,
+		Logger:       logger,
+	})
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +129,8 @@ func run() error {
 		_, _ = fmt.Fprint(w, "ok")
 	})
 	mux.Handle("/api/v1/", apiHandler.Routes())
+	mux.Handle("/", webServer.Handler())
+	slog.Info("admin web UI mounted")
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

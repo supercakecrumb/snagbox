@@ -1,0 +1,44 @@
+{{define "content"}}
+<h1>Agents</h1>
+
+{{if .NewToken}}
+<div class="token-box">
+  <strong>Token for {{.NewTokenName}}</strong>
+  <p>Copy this token now — it won't be shown again.</p>
+  <code>{{.NewToken}}</code>
+</div>
+{{end}}
+
+<div class="card">
+  <form class="create-form" method="post" action="/agents">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <label>Name<input type="text" name="name" required></label>
+    <button type="submit">Create agent</button>
+  </form>
+</div>
+
+{{if .Agents}}
+<table>
+  <thead><tr><th>ID</th><th>Name</th><th>Created</th><th>Last seen</th><th>Queue depth</th><th></th></tr></thead>
+  <tbody>
+    {{range .Agents}}
+    <tr>
+      <td>{{.Agent.ID}}</td>
+      <td><a href="/agents/{{.Agent.ID}}">{{.Agent.Name}}</a></td>
+      <td class="muted">{{.Agent.CreatedAt.Format "2006-01-02 15:04"}}</td>
+      <td class="muted">{{if .Agent.LastSeenAt}}{{.Agent.LastSeenAt.Format "2006-01-02 15:04"}}{{else}}never{{end}}</td>
+      <td>{{.Depth}}</td>
+      <td>
+        <form class="inline" method="post" action="/agents/{{.Agent.ID}}/delete" onsubmit="return confirm('Delete this agent?')">
+          <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+          <button class="danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No agents yet.</p>
+{{end}}
+{{end}}

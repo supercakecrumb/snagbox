@@ -1,0 +1,21 @@
+{{define "content"}}
+<h1>Agent: {{.Agent.Name}}</h1>
+<p class="muted"><a href="/agents">&larr; Back to agents</a></p>
+
+<div class="card">
+  <form method="post" action="/agents/{{.Agent.ID}}/perms">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <h2>Permissions</h2>
+    <p class="muted">Choose which queues this agent may drain.</p>
+    <p>
+      <label><input type="checkbox" name="inbox" value="1"{{if .Inbox}} checked{{end}}> Inbox (untagged issues)</label>
+    </p>
+    {{range .Perms}}
+    <p>
+      <label><input type="checkbox" name="project_ids" value="{{.Project.ID}}"{{if .Checked}} checked{{end}}> {{.Project.Name}} <code>{{.Project.Slug}}</code></label>
+    </p>
+    {{end}}
+    <button type="submit">Save permissions</button>
+  </form>
+</div>
+{{end}}

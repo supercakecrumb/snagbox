@@ -1,0 +1,27 @@
+{{define "content"}}
+<h1>Dashboard</h1>
+<div class="stats">
+  <div class="stat"><div class="n">{{.InboxCount}}</div><div class="l">Inbox</div></div>
+  <div class="stat"><div class="n">{{.IssueCount}}</div><div class="l">Issues</div></div>
+  <div class="stat"><div class="n">{{.ProjectCount}}</div><div class="l">Projects</div></div>
+  <div class="stat"><div class="n">{{.AgentCount}}</div><div class="l">Agents</div></div>
+  <div class="stat"><div class="n">{{.UserCount}}</div><div class="l">Users</div></div>
+</div>
+
+<h2>Agent queues</h2>
+{{if .Agents}}
+<table>
+  <thead><tr><th>Agent</th><th>Unacked queue depth</th></tr></thead>
+  <tbody>
+    {{range .Agents}}
+    <tr>
+      <td><a href="/agents/{{.Agent.ID}}">{{.Agent.Name}}</a></td>
+      <td>{{.Depth}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No agents configured yet.</p>
+{{end}}
+{{end}}

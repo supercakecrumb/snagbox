@@ -1,0 +1,43 @@
+{{define "content"}}
+<h1>Issues</h1>
+
+<div class="card">
+  <form class="create-form" method="get" action="/issues">
+    <label>Project
+      <select name="project">
+        <option value=""{{if eq .Filter ""}} selected{{end}}>All</option>
+        <option value="inbox"{{if eq .Filter "inbox"}} selected{{end}}>Inbox</option>
+        {{range .Projects}}<option value="{{.Slug}}"{{if eq $.Filter .Slug}} selected{{end}}>{{.Name}}</option>{{end}}
+      </select>
+    </label>
+    <label>Limit<input type="number" name="limit" value="{{.Limit}}" min="1" max="100"></label>
+    <button type="submit">Filter</button>
+  </form>
+</div>
+
+{{if .Issues}}
+<table>
+  <thead><tr><th>ID</th><th>Project</th><th>Source</th><th>Created</th><th>Body</th></tr></thead>
+  <tbody>
+    {{range .Issues}}
+    <tr>
+      <td><code>{{shortID .Issue.ID.String}}</code></td>
+      <td>{{.Project}}</td>
+      <td class="muted">{{.Issue.Source}}</td>
+      <td class="muted">{{.Issue.CreatedAt.Format "2006-01-02 15:04"}}</td>
+      <td>
+        <div class="body">{{.Issue.Body}}</div>
+        {{if .Attachments}}
+        <div class="thumbs">
+          {{range .Attachments}}<a href="/attachments/{{.ID}}" target="_blank"><img src="/attachments/{{.ID}}" alt="{{.Filename}}"></a>{{end}}
+        </div>
+        {{end}}
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No issues match.</p>
+{{end}}
+{{end}}

@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/minio/minio-go/v7 v7.2.1
 	github.com/pressly/goose/v3 v3.27.2
+	github.com/supercakecrumb/msgr-authkit v0.1.0
 )
 
 require (

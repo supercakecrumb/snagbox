@@ -1,0 +1,49 @@
+{{define "content"}}
+<h1>Ingest tokens</h1>
+
+{{if .NewToken}}
+<div class="token-box">
+  <strong>Token {{if .NewTokenName}}for {{.NewTokenName}}{{end}}</strong>
+  <p>Copy this token now — it won't be shown again.</p>
+  <code>{{.NewToken}}</code>
+</div>
+{{end}}
+
+<div class="card">
+  <form class="create-form" method="post" action="/tokens">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <label>Label<input type="text" name="label"></label>
+    <label>Project
+      <select name="project_id">
+        <option value="">Inbox (untagged)</option>
+        {{range .Projects}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+      </select>
+    </label>
+    <button type="submit">Create token</button>
+  </form>
+</div>
+
+{{if .Tokens}}
+<table>
+  <thead><tr><th>ID</th><th>Label</th><th>Target</th><th>Created</th><th></th></tr></thead>
+  <tbody>
+    {{range .Tokens}}
+    <tr>
+      <td>{{.Token.ID}}</td>
+      <td>{{.Token.Label}}</td>
+      <td>{{.Project}}</td>
+      <td class="muted">{{.Token.CreatedAt.Format "2006-01-02 15:04"}}</td>
+      <td>
+        <form class="inline" method="post" action="/tokens/{{.Token.ID}}/delete" onsubmit="return confirm('Delete this token?')">
+          <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+          <button class="danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No ingest tokens yet.</p>
+{{end}}
+{{end}}

@@ -15,6 +15,7 @@ import (
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/google/uuid"
+	authkit "github.com/supercakecrumb/msgr-authkit"
 
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
@@ -315,6 +316,44 @@ func (b *Bot) handleProjects(ctx context.Context, _ *tgbot.Bot, update *models.U
 		fmt.Fprintf(&sb, "• <b>%s</b> — %s\n", html.EscapeString(p.Slug), html.EscapeString(p.Name))
 	}
 	b.replyHTML(ctx, update.Message.Chat.ID, sb.String())
+}
+
+// handleLogin issues a one-time admin dashboard login link. It only works in
+// private chats for allowlisted admins.
+func (b *Bot) handleLogin(ctx context.Context, _ *tgbot.Bot, update *models.Update) {
+	if update.Message == nil || update.Message.Chat.Type != models.ChatTypePrivate {
+		return
+	}
+	from := update.Message.From
+	if _, ok := b.resolveUser(ctx, from); !ok || from == nil || !b.admins[from.ID] {
+		b.reply(ctx, update.Message.Chat.ID, "Only admins can access the dashboard.")
+		return
+	}
+	if b.loginSvc == nil {
+		b.reply(ctx, update.Message.Chat.ID, "Admin dashboard isn't configured on this server.")
+		return
+	}
+
+	tgID := from.ID
+	out, err := b.loginSvc.CreateLoginLink(ctx, authkit.CreateLoginLinkInput{
+		Messenger: authkit.NewMessenger("telegram"),
+		Audience:  "web",
+		SubjectID: strconv.FormatInt(tgID, 10),
+		Identity: &authkit.Identity{
+			Messenger:       authkit.NewMessenger("telegram"),
+			MessengerUserID: strconv.FormatInt(tgID, 10),
+			Username:        from.Username,
+			Name:            from.FirstName,
+			Surname:         from.LastName,
+		},
+	})
+	if err != nil {
+		b.logger.Error("create login link", "tg_id", tgID, "error", err)
+		b.reply(ctx, update.Message.Chat.ID, "Sorry, I couldn't create a login link.")
+		return
+	}
+
+	b.reply(ctx, update.Message.Chat.ID, fmt.Sprintf("Login link (valid briefly): %s", out.LoginURL))
 }
 
 // projectNames maps project ids to display names, best-effort.

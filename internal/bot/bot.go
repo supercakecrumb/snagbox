@@ -14,42 +14,52 @@ import (
 
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	authkit "github.com/supercakecrumb/msgr-authkit"
 
 	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/config"
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
 
+// LoginLinkService issues bot-first login links for the admin dashboard. It is
+// satisfied by *authkit.AuthService and may be nil when login is disabled.
+type LoginLinkService interface {
+	CreateLoginLink(ctx context.Context, in authkit.CreateLoginLinkInput) (authkit.CreateLoginLinkOutput, error)
+}
+
 // Bot is the Telegram intake bot. It turns allowlisted users' messages into
 // inbox issues and offers inline buttons to tag them to a project.
 type Bot struct {
-	client  *tgbot.Bot
-	token   string
-	store   *store.Store
-	blob    *blob.Store
-	admins  map[int64]bool // from cfg.AdminTelegramIDs, for bootstrap seeding
-	http    *http.Client
-	logger  *slog.Logger
-	baseCtx context.Context // set in Start, used by album flush timers
-	albums  *albumBuffer
+	client   *tgbot.Bot
+	token    string
+	store    *store.Store
+	blob     *blob.Store
+	loginSvc LoginLinkService // nil when the admin dashboard login is disabled
+	admins   map[int64]bool   // from cfg.AdminTelegramIDs, for bootstrap seeding
+	http     *http.Client
+	logger   *slog.Logger
+	baseCtx  context.Context // set in Start, used by album flush timers
+	albums   *albumBuffer
 }
 
 // New builds a Bot, wiring the Telegram client, its handlers and the album
-// buffer. It does not start polling; call Start for that.
-func New(cfg config.Config, st *store.Store, bl *blob.Store, logger *slog.Logger) (*Bot, error) {
+// buffer. loginSvc may be nil to disable the /login dashboard flow. It does not
+// start polling; call Start for that.
+func New(cfg config.Config, st *store.Store, bl *blob.Store, loginSvc LoginLinkService, logger *slog.Logger) (*Bot, error) {
 	admins := make(map[int64]bool, len(cfg.AdminTelegramIDs))
 	for _, id := range cfg.AdminTelegramIDs {
 		admins[id] = true
 	}
 
 	b := &Bot{
-		token:  cfg.TelegramBotToken,
-		store:  st,
-		blob:   bl,
-		admins: admins,
-		http:   &http.Client{Timeout: 30 * time.Second},
-		logger: logger,
-		albums: newAlbumBuffer(2 * time.Second),
+		token:    cfg.TelegramBotToken,
+		store:    st,
+		blob:     bl,
+		loginSvc: loginSvc,
+		admins:   admins,
+		http:     &http.Client{Timeout: 30 * time.Second},
+		logger:   logger,
+		albums:   newAlbumBuffer(2 * time.Second),
 	}
 
 	// An album flushes into a single issue with all its photos once the
@@ -71,6 +81,7 @@ func New(cfg config.Config, st *store.Store, bl *blob.Store, logger *slog.Logger
 	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/start", tgbot.MatchTypeCommand, b.handleStart)
 	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/last", tgbot.MatchTypeCommand, b.handleLast)
 	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/projects", tgbot.MatchTypeCommand, b.handleProjects)
+	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/login", tgbot.MatchTypeCommand, b.handleLogin)
 	client.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "tag:", tgbot.MatchTypePrefix, b.handleTagCallback)
 
 	return b, nil

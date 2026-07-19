@@ -1,0 +1,43 @@
+{{define "content"}}
+<h1>Users (allowlist)</h1>
+<p class="muted">These are the Telegram users the bot accepts. Admins can also be seeded via <code>ADMIN_TG_IDS</code>.</p>
+
+<div class="card">
+  <form class="create-form" method="post" action="/users">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <label>Telegram ID<input type="number" name="telegram_id" required></label>
+    <label>Name<input type="text" name="name"></label>
+    <label>Role
+      <select name="role">
+        <option value="member">member</option>
+        <option value="admin">admin</option>
+      </select>
+    </label>
+    <button type="submit">Add user</button>
+  </form>
+</div>
+
+{{if .Users}}
+<table>
+  <thead><tr><th>ID</th><th>Telegram ID</th><th>Name</th><th>Role</th><th></th></tr></thead>
+  <tbody>
+    {{range .Users}}
+    <tr>
+      <td>{{.ID}}</td>
+      <td><code>{{.TelegramID}}</code></td>
+      <td>{{.Name}}</td>
+      <td>{{.Role}}</td>
+      <td>
+        <form class="inline" method="post" action="/users/{{.ID}}/delete" onsubmit="return confirm('Remove this user?')">
+          <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+          <button class="danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No users yet.</p>
+{{end}}
+{{end}}
