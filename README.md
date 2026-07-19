@@ -30,10 +30,21 @@ The service listens on `PORT` (default `8080`).
 | `GET /api/v1/attachments/{id}`   | Fetch an issue attachment                     |
 | `GET /healthz`                   | Liveness/readiness check                      |
 
-## Clients
+## Reporting issues from your projects
 
-- Go client: `client/` (coming milestone)
-- TypeScript client: `clients/js/` (coming milestone)
+Wiring a bot or web app to file issues into snagbox is a two-value setup
+(`SNAGBOX_URL` + a project-scoped ingest token) plus one call. See
+**[INTEGRATION.md](INTEGRATION.md)** for the full copy-paste guide.
+
+- Go client: [`client/`](client/README.md) — `go get github.com/supercakecrumb/snagbox/client`
+- TypeScript client: [`clients/js/`](clients/js/README.md) — `@supercakecrumb/snagbox`
+
+Both are report-only and dependency-free. Draining the queue (the agent side)
+is plain HTTP.
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md).
 
 ## License
 
