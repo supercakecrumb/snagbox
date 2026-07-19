@@ -1,2 +1,0 @@
-kind: Added
-body: Project skeleton — config, Postgres store with embedded goose migration, health endpoint, Docker/compose (Postgres + MinIO), CI, and the single pre-commit gate.

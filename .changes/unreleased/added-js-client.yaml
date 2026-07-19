@@ -1,2 +1,0 @@
-kind: Added
-body: TypeScript client SDK (clients/js, @supercakecrumb/snagbox) — a dependency-free, fetch-based reportIssue mirroring the Go client, with JSON and multipart paths and a typed SnagboxError.

@@ -1,2 +1,0 @@
-kind: Added
-body: Core HTTP API — ingest-token issue creation with photo upload to S3, per-agent fan-out queue with independent acks, bulk ack, issue browse, and authenticated attachment streaming. Backed by pgx store repos, a MinIO/S3 blob layer, and a token hashing package.

@@ -1,2 +1,0 @@
-kind: Added
-body: Telegram intake bot — allowlisted users file issues from text and photos (albums grouped into one issue), tag them to a project via inline buttons, and browse with /last and /projects. Photos are downloaded to S3; unknown admins are seeded on first message.

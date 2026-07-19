@@ -1,2 +1,0 @@
-kind: Added
-body: Dependency-free Go client SDK (client/) for reporting issues, and an integration test suite covering the ingest → fan-out queue → ack round-trip against real Postgres and MinIO.

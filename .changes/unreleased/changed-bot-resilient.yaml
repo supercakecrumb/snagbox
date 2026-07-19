@@ -1,2 +1,0 @@
-kind: Changed
-body: A failed Telegram bot startup (bad or unreachable token) no longer crashes the service — the API and admin UI keep running and the bot is disabled with an error log.

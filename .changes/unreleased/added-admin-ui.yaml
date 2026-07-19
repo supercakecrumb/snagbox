@@ -1,2 +1,0 @@
-kind: Added
-body: Server-rendered admin dashboard with msgr-authkit bot-login — CRUD for projects, agents (with per-project permission checkboxes and one-time tokens), ingest tokens, and the Telegram user allowlist, plus an issue browser with photo thumbnails. Adds a /login command to the bot.
