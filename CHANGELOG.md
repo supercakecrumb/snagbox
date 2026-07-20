@@ -3,6 +3,10 @@
 All notable changes to snagbox are documented here.
 
 
+## v0.1.3 - 2026-07-20
+### Fixed
+* Login link was consumed on arrival by Telegram's link-preview crawler, so admins hit an "invalid or expired" page before clicking. The bot now sends the one-time login link with the link preview disabled.
+
 ## v0.1.2 - 2026-07-20
 ### Fixed
 * CI lint step used golangci-lint v2.5.0 (built with go1.25), which refuses to lint a module targeting go 1.26 and blocked the release job. Bumped to v2.12.2 (built with go1.26).
