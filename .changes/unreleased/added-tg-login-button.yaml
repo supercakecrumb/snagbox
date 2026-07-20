@@ -1,2 +1,0 @@
-kind: Added
-body: Admin login page shows a "Login with Telegram" button that deep-links to the bot (t.me/<bot>?start=login); the /start login deep link issues a dashboard login link just like /login. The bot's @username is resolved via getMe at startup.

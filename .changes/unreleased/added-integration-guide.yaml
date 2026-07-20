@@ -1,2 +1,0 @@
-kind: Added
-body: Integration guide (INTEGRATION.md) and a Go client README showing how to wire snagbox issue reporting into a bot or web project, with a server-side-only token note; refreshed the root README clients section.

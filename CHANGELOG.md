@@ -3,6 +3,13 @@
 All notable changes to snagbox are documented here.
 
 
+## v0.1.1 - 2026-07-20
+### Added
+* Integration guide (INTEGRATION.md) and a Go client README showing how to wire snagbox issue reporting into a bot or web project, with a server-side-only token note; refreshed the root README clients section.
+* Admin login page shows a "Login with Telegram" button that deep-links to the bot (t.me/<bot>?start=login); the /start login deep link issues a dashboard login link just like /login. The bot's @username is resolved via getMe at startup.
+### Fixed
+* Bot slash commands (/start, /last, /projects, /login) were registered with a leading slash, which MatchTypeCommand never matches, so every command fell through and got filed as an issue. Commands are now registered slash-less and route correctly, so /login issues a dashboard login link again.
+
 ## v0.1.0 - 2026-07-19
 ### Added
 * Server-rendered admin dashboard with msgr-authkit bot-login — CRUD for projects, agents (with per-project permission checkboxes and one-time tokens), ingest tokens, and the Telegram user allowlist, plus an issue browser with photo thumbnails. Adds a /login command to the bot.
