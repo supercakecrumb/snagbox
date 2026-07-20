@@ -360,7 +360,18 @@ func (b *Bot) handleLogin(ctx context.Context, _ *tgbot.Bot, update *models.Upda
 		return
 	}
 
-	b.reply(ctx, update.Message.Chat.ID, fmt.Sprintf("Login link (valid briefly): %s", out.LoginURL))
+	// Send with the link preview disabled: Telegram's preview crawler fetches
+	// URLs in outgoing messages, and that GET would redeem the one-time login
+	// link before the admin ever clicks it, leaving them with an "invalid or
+	// expired" page. IsDisabled stops the crawler from consuming the token.
+	disabled := true
+	if _, err := b.client.SendMessage(ctx, &tgbot.SendMessageParams{
+		ChatID:             update.Message.Chat.ID,
+		Text:               fmt.Sprintf("Login link (valid briefly): %s", out.LoginURL),
+		LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: &disabled},
+	}); err != nil {
+		b.logger.Error("send login link", "chat_id", update.Message.Chat.ID, "error", err)
+	}
 }
 
 // projectNames maps project ids to display names, best-effort.
