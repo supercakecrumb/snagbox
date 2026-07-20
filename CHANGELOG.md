@@ -3,6 +3,10 @@
 All notable changes to snagbox are documented here.
 
 
+## v0.1.2 - 2026-07-20
+### Fixed
+* CI lint step used golangci-lint v2.5.0 (built with go1.25), which refuses to lint a module targeting go 1.26 and blocked the release job. Bumped to v2.12.2 (built with go1.26).
+
 ## v0.1.1 - 2026-07-20
 ### Added
 * Integration guide (INTEGRATION.md) and a Go client README showing how to wire snagbox issue reporting into a bot or web project, with a server-side-only token note; refreshed the root README clients section.
