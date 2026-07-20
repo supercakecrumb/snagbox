@@ -32,6 +32,7 @@ type Server struct {
 	sessions     auth.SessionValidator
 	serverSecret []byte
 	cookieSecure bool
+	botUsername  string
 	tmpl         map[string]*template.Template
 	logger       *slog.Logger
 }
@@ -45,7 +46,11 @@ type Deps struct {
 	Sessions     auth.SessionValidator
 	ServerSecret []byte
 	CookieSecure bool
-	Logger       *slog.Logger
+	// BotUsername is the Telegram bot's @username (without the @). When set,
+	// the login page shows a "Login with Telegram" button that deep-links to
+	// the bot with the login start parameter. Empty hides the button.
+	BotUsername string
+	Logger      *slog.Logger
 }
 
 // NewServer builds a Server, parsing its embedded templates up front.
@@ -61,6 +66,7 @@ func NewServer(d Deps) *Server {
 		sessions:     d.Sessions,
 		serverSecret: d.ServerSecret,
 		cookieSecure: d.CookieSecure,
+		botUsername:  d.BotUsername,
 		tmpl:         parseTemplates(),
 		logger:       logger,
 	}

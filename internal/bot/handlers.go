@@ -240,15 +240,22 @@ func (b *Bot) projectName(ctx context.Context, pid int64) string {
 	return "inbox"
 }
 
-// handleStart replies with a short description of what the bot does.
+// handleStart replies with a short description of what the bot does. The
+// "/start login" deep link (used by the admin page's "Login with Telegram"
+// button) is treated as a login request and issues a dashboard login link.
 func (b *Bot) handleStart(ctx context.Context, _ *tgbot.Bot, update *models.Update) {
 	if update.Message == nil {
+		return
+	}
+	if fields := strings.Fields(update.Message.Text); len(fields) > 1 && fields[1] == "login" {
+		b.handleLogin(ctx, nil, update)
 		return
 	}
 	text := "Send me text or photos and I'll file them as an issue. " +
 		"They land in the inbox, and you can tag each one to a project with the buttons I add.\n\n" +
 		"/last — show the most recent issues\n" +
-		"/projects — list configured projects"
+		"/projects — list configured projects\n" +
+		"/login — get an admin dashboard login link"
 	b.reply(ctx, update.Message.Chat.ID, text)
 }
 

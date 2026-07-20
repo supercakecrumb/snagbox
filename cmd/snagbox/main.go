@@ -116,6 +116,18 @@ func run() error {
 		tg = nil
 	}
 
+	// Resolve the bot's @username so the login page can offer a "Login with
+	// Telegram" deep link. Best-effort: on failure the page falls back to the
+	// plain "send /login to the bot" instructions.
+	var botUsername string
+	if tg != nil {
+		if me, err := tg.Client().GetMe(ctx); err != nil {
+			logger.Warn("resolve bot username", "error", err)
+		} else {
+			botUsername = me.Username
+		}
+	}
+
 	cookieSecure := strings.HasPrefix(cfg.PublicBaseURL, "https://")
 	webServer := web.NewServer(web.Deps{
 		Store:        st,
@@ -124,6 +136,7 @@ func run() error {
 		Sessions:     sessionIssuer,
 		ServerSecret: cfg.SessionEncKey,
 		CookieSecure: cookieSecure,
+		BotUsername:  botUsername,
 		Logger:       logger,
 	})
 

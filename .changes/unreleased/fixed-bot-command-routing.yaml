@@ -1,0 +1,2 @@
+kind: Fixed
+body: Bot slash commands (/start, /last, /projects, /login) were registered with a leading slash, which MatchTypeCommand never matches, so every command fell through and got filed as an issue. Commands are now registered slash-less and route correctly, so /login issues a dashboard login link again.

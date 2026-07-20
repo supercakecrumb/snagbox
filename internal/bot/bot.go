@@ -78,10 +78,14 @@ func New(cfg config.Config, st *store.Store, bl *blob.Store, loginSvc LoginLinkS
 	}
 	b.client = client
 
-	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/start", tgbot.MatchTypeCommand, b.handleStart)
-	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/last", tgbot.MatchTypeCommand, b.handleLast)
-	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/projects", tgbot.MatchTypeCommand, b.handleProjects)
-	client.RegisterHandler(tgbot.HandlerTypeMessageText, "/login", tgbot.MatchTypeCommand, b.handleLogin)
+	// MatchTypeCommand compares the command name without its leading slash, so
+	// the patterns are registered slash-less ("start", not "/start").
+	// Registering them with a slash never matches, and the message falls
+	// through to handleDefault and gets filed as an issue.
+	client.RegisterHandler(tgbot.HandlerTypeMessageText, "start", tgbot.MatchTypeCommand, b.handleStart)
+	client.RegisterHandler(tgbot.HandlerTypeMessageText, "last", tgbot.MatchTypeCommand, b.handleLast)
+	client.RegisterHandler(tgbot.HandlerTypeMessageText, "projects", tgbot.MatchTypeCommand, b.handleProjects)
+	client.RegisterHandler(tgbot.HandlerTypeMessageText, "login", tgbot.MatchTypeCommand, b.handleLogin)
 	client.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "tag:", tgbot.MatchTypePrefix, b.handleTagCallback)
 
 	return b, nil

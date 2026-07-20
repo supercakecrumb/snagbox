@@ -8,8 +8,13 @@
 {{else}}
 {{if .Error}}<div class="token-box">{{.Error}}</div>{{end}}
 <div class="card">
+  {{if .BotLink}}
+  <p><a href="{{.BotLink}}" class="tg-login">Login with Telegram</a></p>
+  <p class="muted">Opens the bot and sends you a one-time login link. Only allowlisted admins receive one; the link opens this page and signs you in automatically.</p>
+  {{else}}
   <p>To sign in, open the Telegram bot and send <code>/login</code>.</p>
   <p class="muted">Only allowlisted admins receive a login link. The link opens this page and signs you in automatically.</p>
+  {{end}}
 </div>
 {{end}}
 {{end}}
