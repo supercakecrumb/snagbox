@@ -103,6 +103,8 @@ func (s *Store) GetAttachment(ctx context.Context, id uuid.UUID) (Attachment, er
 
 // ListIssuesParams filters a browse query over issues.
 type ListIssuesParams struct {
+	// AgentID limits machine-client browsing to current project permissions.
+	AgentID   *int64
 	ProjectID *int64
 	InboxOnly bool
 	Since     *time.Time
@@ -121,6 +123,9 @@ func (s *Store) ListIssues(ctx context.Context, p ListIssuesParams) ([]Issue, er
 		conds = append(conds, strings.Replace(cond, "$?", "$"+strconv.Itoa(len(args)), 1))
 	}
 
+	if p.AgentID != nil {
+		add("EXISTS (SELECT 1 FROM agent_project_perms perm WHERE perm.agent_id = $? AND perm.project_id IS NOT DISTINCT FROM issues.project_id)", *p.AgentID)
+	}
 	switch {
 	case p.InboxOnly:
 		conds = append(conds, "project_id IS NULL")
@@ -164,4 +169,23 @@ func (s *Store) ListIssues(ctx context.Context, p ListIssuesParams) ([]Issue, er
 		return nil, fmt.Errorf("iterate issues: %w", err)
 	}
 	return out, nil
+}
+
+// GetAttachmentForAgent authorizes against the attachment's issue before returning storage metadata.
+func (s *Store) GetAttachmentForAgent(ctx context.Context, id uuid.UUID, agentID int64) (Attachment, error) {
+	var a Attachment
+	err := s.Pool.QueryRow(ctx, `
+  SELECT a.id, a.issue_id, a.s3_key, a.mime, a.size_bytes, a.filename
+  FROM attachments a JOIN issues i ON i.id = a.issue_id
+  WHERE a.id = $1 AND EXISTS (
+   SELECT 1 FROM agent_project_perms p WHERE p.agent_id = $2
+    AND p.project_id IS NOT DISTINCT FROM i.project_id
+  )`, id, agentID).Scan(&a.ID, &a.IssueID, &a.S3Key, &a.Mime, &a.SizeBytes, &a.Filename)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Attachment{}, ErrNotFound
+	}
+	if err != nil {
+		return Attachment{}, fmt.Errorf("select authorized attachment: %w", err)
+	}
+	return a, nil
 }

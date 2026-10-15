@@ -88,22 +88,23 @@ func (s *Store) attachmentsForIssues(ctx context.Context, ids []uuid.UUID) (map[
 }
 
 // AckIssue marks issueID acked for agentID. It is idempotent and returns
-// ErrNotFound if the issue does not exist.
+// ErrNotFound if the issue does not exist or is outside the agent permissions.
 func (s *Store) AckIssue(ctx context.Context, agentID int64, issueID uuid.UUID) error {
-	var exists bool
-	err := s.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM issues WHERE id = $1)`, issueID).Scan(&exists)
+	var allowed bool
+	err := s.Pool.QueryRow(ctx, `
+  WITH allowed AS (
+   SELECT i.id FROM issues i WHERE i.id = $2 AND EXISTS (
+    SELECT 1 FROM agent_project_perms p WHERE p.agent_id = $1
+     AND p.project_id IS NOT DISTINCT FROM i.project_id
+   )
+  ), inserted AS (
+   INSERT INTO acks (agent_id, issue_id) SELECT $1, id FROM allowed ON CONFLICT DO NOTHING
+  ) SELECT EXISTS (SELECT 1 FROM allowed)`, agentID, issueID).Scan(&allowed)
 	if err != nil {
-		return fmt.Errorf("check issue exists: %w", err)
+		return fmt.Errorf("authorize and insert ack: %w", err)
 	}
-	if !exists {
+	if !allowed {
 		return ErrNotFound
-	}
-
-	_, err = s.Pool.Exec(ctx, `
-		INSERT INTO acks (agent_id, issue_id) VALUES ($1, $2)
-		ON CONFLICT DO NOTHING`, agentID, issueID)
-	if err != nil {
-		return fmt.Errorf("insert ack: %w", err)
 	}
 	return nil
 }
@@ -116,7 +117,9 @@ func (s *Store) AckIssues(ctx context.Context, agentID int64, issueIDs []uuid.UU
 	}
 	_, err := s.Pool.Exec(ctx, `
 		INSERT INTO acks (agent_id, issue_id)
-		SELECT $1, id FROM issues WHERE id = ANY($2::uuid[])
+		SELECT $1, i.id FROM issues i WHERE i.id = ANY($2::uuid[])
+   AND EXISTS (SELECT 1 FROM agent_project_perms p WHERE p.agent_id = $1
+    AND p.project_id IS NOT DISTINCT FROM i.project_id)
 		ON CONFLICT DO NOTHING`, agentID, issueIDs)
 	if err != nil {
 		return fmt.Errorf("insert acks: %w", err)

@@ -98,7 +98,7 @@ func (b *Bot) storePhoto(ctx context.Context, issueID uuid.UUID, fileID string) 
 	}
 	resp, err := b.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("download photo: %w", err)
+		return errors.New("download photo: request failed")
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
@@ -169,7 +169,11 @@ func (b *Bot) projectKeyboard(ctx context.Context, issueID string) *models.Inlin
 // issue to the chosen project (or leaving it in the inbox).
 func (b *Bot) handleTagCallback(ctx context.Context, _ *tgbot.Bot, update *models.Update) {
 	q := update.CallbackQuery
-	if q == nil {
+	if q == nil || q.Message.Message == nil || q.Message.Message.Chat.Type != models.ChatTypePrivate {
+		return
+	}
+	user, ok := b.resolveUser(ctx, &q.From)
+	if !ok {
 		return
 	}
 
@@ -198,7 +202,7 @@ func (b *Bot) handleTagCallback(ctx context.Context, _ *tgbot.Bot, update *model
 		projectName = b.projectName(ctx, pid)
 	}
 
-	err = b.store.SetIssueProject(ctx, issueID, projectID)
+	err = b.store.SetIssueProjectForUser(ctx, issueID, projectID, user.ID, b.admins[q.From.ID])
 	switch {
 	case errors.Is(err, store.ErrNotFound):
 		b.answerCallback(ctx, q.ID, "issue not found")
@@ -261,7 +265,10 @@ func (b *Bot) handleStart(ctx context.Context, _ *tgbot.Bot, update *models.Upda
 
 // handleLast lists the most recent issues, defaulting to 5 and capping at 20.
 func (b *Bot) handleLast(ctx context.Context, _ *tgbot.Bot, update *models.Update) {
-	if update.Message == nil {
+	if update.Message == nil || update.Message.Chat.Type != models.ChatTypePrivate {
+		return
+	}
+	if _, ok := b.resolveUser(ctx, update.Message.From); !ok {
 		return
 	}
 
@@ -303,7 +310,10 @@ func (b *Bot) handleLast(ctx context.Context, _ *tgbot.Bot, update *models.Updat
 
 // handleProjects lists configured projects as "slug — name" bullets.
 func (b *Bot) handleProjects(ctx context.Context, _ *tgbot.Bot, update *models.Update) {
-	if update.Message == nil {
+	if update.Message == nil || update.Message.Chat.Type != models.ChatTypePrivate {
+		return
+	}
+	if _, ok := b.resolveUser(ctx, update.Message.From); !ok {
 		return
 	}
 

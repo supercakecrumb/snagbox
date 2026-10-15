@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/supercakecrumb/snagbox/internal/attachment"
 	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
@@ -128,7 +129,7 @@ func (s *Server) handleAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = rc.Close() }()
 
-	w.Header().Set("Content-Type", att.Mime)
+	attachment.SetHeaders(w.Header(), att.Mime, att.Filename)
 	if _, err := io.Copy(w, rc); err != nil {
 		s.logger.Error("stream attachment", "attachment_id", id, "error", err)
 	}

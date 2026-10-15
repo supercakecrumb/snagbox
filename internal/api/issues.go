@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/supercakecrumb/snagbox/internal/attachment"
 	"github.com/supercakecrumb/snagbox/internal/blob"
 	"github.com/supercakecrumb/snagbox/internal/store"
 )
@@ -234,7 +235,8 @@ func (h *Handler) bulkAck(w http.ResponseWriter, r *http.Request) {
 // listIssues browses issues with optional project, since and limit filters.
 func (h *Handler) listIssues(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	var params store.ListIssuesParams
+	agent := agentFromCtx(r.Context())
+	params := store.ListIssuesParams{AgentID: &agent.ID}
 
 	switch project := q.Get("project"); project {
 	case "":
@@ -292,7 +294,7 @@ func (h *Handler) getAttachment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	att, err := h.store.GetAttachment(r.Context(), id)
+	att, err := h.store.GetAttachmentForAgent(r.Context(), id, agentFromCtx(r.Context()).ID)
 	if errors.Is(err, store.ErrNotFound) {
 		writeErr(w, http.StatusNotFound, "attachment not found")
 		return
@@ -315,8 +317,7 @@ func (h *Handler) getAttachment(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = rc.Close() }()
 
-	w.Header().Set("Content-Type", att.Mime)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%q", att.Filename))
+	attachment.SetHeaders(w.Header(), att.Mime, att.Filename)
 	if _, err := io.Copy(w, rc); err != nil {
 		h.logger.Error("stream attachment", "attachment_id", id, "error", err)
 	}
