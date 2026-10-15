@@ -1,3 +1,0 @@
-kind: Security
-body: Enforce project permissions on agent reads and acknowledgements, protect Telegram commands and issue tagging, and prevent uploaded active content from executing on the dashboard origin.
-time: 2026-10-15T16:00:00+03:00

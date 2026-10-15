@@ -3,6 +3,10 @@
 All notable changes to snagbox are documented here.
 
 
+## v0.1.4 - 2026-10-15
+### Security
+* Enforce project permissions on agent reads and acknowledgements, protect Telegram commands and issue tagging, and prevent uploaded active content from executing on the dashboard origin.
+
 ## v0.1.3 - 2026-07-20
 ### Fixed
 * Login link was consumed on arrival by Telegram's link-preview crawler, so admins hit an "invalid or expired" page before clicking. The bot now sends the one-time login link with the link preview disabled.
